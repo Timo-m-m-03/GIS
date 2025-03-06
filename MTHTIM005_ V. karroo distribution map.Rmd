@@ -1,0 +1,89 @@
+---
+title: "V. karroo distribution map"
+author: "Tim Muthama"
+date: "2025-03-05"
+output: html_document
+---
+## Installing packages
+
+```{r, echo = TRUE}
+
+library("sf")
+library("rinat")
+library("tidyverse")
+library("tmap")
+library("ggspatial")
+library("mapview")
+
+```
+
+## Biome data
+
+
+```{r, echo = TRUE, fig.show='asis'}
+veg <- st_read("data/Biomes/Biome_Shapefile/Biomes_of_South_Africa_DEA_CSIR_2015-11-06_poly.shp")
+
+veg$DN[veg$DN == "1"] <- "Dessert"
+veg$DN[veg$DN == "2"] <- "Succulant Karoo"
+veg$DN[veg$DN == "3"] <- "Nama Karoo"
+veg$DN[veg$DN == "4"] <- "Fynboss"
+veg$DN[veg$DN == "5"] <- "Albany Thicket"
+veg$DN[veg$DN == "6"] <- "Grassland"
+veg$DN[veg$DN == "7"] <- "Savanna"
+veg$DN[veg$DN == "8"] <- "Forest"
+veg$DN[veg$DN == "16"] <- "Indian Ocean Coastal Belt"
+
+class(veg)
+
+ggplot() + geom_sf(data = veg, aes(fill = DN),  color = "black", size = 0.01) + scale_fill_brewer(palette = "Set1")
+
+```
+
+## V. karroo distribution
+
+
+
+```{r, echo = TRUE, fig.show='asis'}
+vk <- get_inat_obs(taxon_name = "Vachellia karroo", maxresults = 5000)
+
+vk <- vk %>% filter(positional_accuracy<46 & 
+                     latitude<0 &
+                     !is.na(latitude) &
+                     captive_cultivated == "false" &
+                     quality_grade == "research")
+
+vk <- st_as_sf(vk, coords = c("longitude", "latitude"), crs = 4326)
+
+# Extract coordinates from the geometry column
+vk_coords <- st_coordinates(vk)
+
+vk <- st_transform(vk, crs = st_crs(veg))
+
+filter.sa <- function(vk) { if(!inherits(vk, "sf")) { stop ("Error: vk must be  an sf object with point geometries")}                                   
+  
+filtered.vk <- st_intersection(vk, veg)  
+return(filtered.vk)}
+
+sa_vk <- filter.sa(vk)
+
+ggplot() + annotation_map_tile(type = "osm", progress = "none") + geom_sf(data=sa_vk)
+```
+
+## Static map
+
+```{r, echo = TRUE, fig.show='asis'}
+
+ggplot() +
+  geom_sf(data = veg, aes(fill = DN), color = "black", alpha = 0.5) +  
+  geom_sf(data = sa_vk, color = "black", size = 0.8) +   
+  labs(fill = "Biome") +
+  theme_minimal()
+  
+```
+
+## Interactive map
+
+```{r, echo = TRUE, fig.show='asis'}
+mapview(veg, zcol = "DN", layer.name = "Biome") + mapview(sa_vk, col.regions = "black", layer.name = "V. karroo", cex = 2)
+
+```
