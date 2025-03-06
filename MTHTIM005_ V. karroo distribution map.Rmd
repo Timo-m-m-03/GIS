@@ -21,7 +21,7 @@ library("mapview")
 
 
 ```{r, echo = TRUE, fig.show='asis'}
-veg <- st_read("data/Biomes/Biome_Shapefile/Biomes_of_South_Africa_DEA_CSIR_2015-11-06_poly.shp")
+veg <- st_read("data/Biomes_of_South_Africa_DEA_CSIR_2015-11-06_poly.shp")
 
 veg$DN[veg$DN == "1"] <- "Dessert"
 veg$DN[veg$DN == "2"] <- "Succulant Karoo"
